@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date 
 
 class Membresia:
     def __init__(self, id_membresia, tipo: str, costo: float):
