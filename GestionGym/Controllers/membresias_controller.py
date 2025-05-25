@@ -16,4 +16,4 @@ class MembresiaController:
 
     def asociarPagoAMembresia(self, idPago: int, idMembresia: int) -> bool:
         print(f"Asociando pago {idPago} a membresía {idMembresia}")
-        return True 
+        return True
