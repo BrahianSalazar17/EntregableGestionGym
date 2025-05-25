@@ -1,4 +1,4 @@
-class ClienteController:
+class ClienteController: 
 
     def crearCliente(self, datos_cliente: dict) -> bool:
         print(f"Creando cliente con datos: {datos_cliente}")
@@ -22,3 +22,4 @@ class ClienteController:
                 {"id": 1, "nombre": "Cliente 1"},
                 {"id": 2, "nombre": "Cliente 2"},
             ]
+
