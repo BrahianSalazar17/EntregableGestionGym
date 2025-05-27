@@ -1,58 +1,73 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from datetime import datetime, date
-from typing import Optional, List
+from flask import Flask, request, jsonify
 
-app = FastAPI()
+app = Flask(__name__)
 
-# ----- MODELOS PARA LA API -----
+# Base de datos simulada con usuarios ya creados
+usuarios = {
+    1: {
+        "Id_persona": 1,
+        "Nombre": "Ana Torres",
+        "Correo": "ana.torres@email.com",
+        "Telefono": "3111234567",
+        "Direccion": "Calle 123 #45-67"
+    },
+    2: {
+        "Id_persona": 2,
+        "Nombre": "Luis Gómez",
+        "Correo": "luis.gomez@email.com",
+        "Telefono": "3109876543",
+        "Direccion": "Cra 10 #20-30"
+    },
+    3: {
+        "Id_persona": 3,
+        "Nombre": "Marta Ruiz",
+        "Correo": "marta.ruiz@email.com",
+        "Telefono": "3001112233",
+        "Direccion": "Av. Siempre Viva 742"
+    }
+}
 
-class Cliente(BaseModel):
-    id: int
-    nombre: str
+# Obtener todos o uno por ID
+@app.route('/usuarios', methods=['GET'])
+def obtener_usuarios():
+    id_persona = request.args.get('id', type=int)
+    if id_persona:
+        usuario = usuarios.get(id_persona)
+        if usuario:
+            return jsonify(usuario)
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    return jsonify(list(usuarios.values()))
 
-class ClienteUpdate(BaseModel):
-    nombre: Optional[str] = None
+# Crear nuevo usuario
+@app.route('/usuarios', methods=['POST'])
+def crear_usuario():
+    datos = request.get_json()
+    nuevo_id = max(usuarios.keys()) + 1
+    datos["Id_persona"] = nuevo_id
+    usuarios[nuevo_id] = datos
+    return jsonify({"resultado": True, "usuario": datos}), 201
 
-class RegistroEntradaModel(BaseModel):
-    id_registro: int
-    id_cliente: int
-    fecha_hora_entrada: Optional[datetime] = None
+# Actualizar usuario
+@app.route('/usuarios/<int:id_persona>', methods=['PUT'])
+def actualizar_usuario(id_persona):
+    if id_persona in usuarios:
+        datos_actualizados = request.get_json()
+        usuarios[id_persona].update(datos_actualizados)
+        return jsonify({"resultado": True, "usuario": usuarios[id_persona]})
+    return jsonify({"resultado": False, "error": "Usuario no encontrado"}), 404
 
-# ----- DATOS SIMULADOS -----
-clientes = []
-registros = []
+# Eliminar usuario
+@app.route('/usuarios/<int:id_persona>', methods=['DELETE'])
+def eliminar_usuario(id_persona):
+    if id_persona in usuarios:
+        del usuarios[id_persona]
+        return jsonify({"resultado": True})
+    return jsonify({"resultado": False, "error": "Usuario no encontrado"}), 404
 
-# ----- RUTAS -----
+@app.route('/')
+def inicio():
+    return "API de Usuarios Activa"
 
-@app.get("/clientes")
-def obtener_clientes():
-    return clientes
+if __name__ == '__main__':
+    app.run(debug=True)
 
-@app.post("/clientes")
-def crear_cliente(cliente: Cliente):
-    clientes.append(cliente)
-    return {"mensaje": "Cliente creado correctamente"}
-
-@app.put("/clientes/{id_cliente}")
-def actualizar_cliente(id_cliente: int, datos: ClienteUpdate):
-    for c in clientes:
-        if c.id == id_cliente:
-            if datos.nombre:
-                c.nombre = datos.nombre
-            return {"mensaje": "Cliente actualizado"}
-    return {"error": "Cliente no encontrado"}
-
-@app.delete("/clientes/{id_cliente}")
-def eliminar_cliente(id_cliente: int):
-    global clientes
-    clientes = [c for c in clientes if c.id != id_cliente]
-    return {"mensaje": "Cliente eliminado"}
-
-@app.post("/entrada")
-def registrar_entrada(entrada: RegistroEntradaModel):
-    hora = entrada.fecha_hora_entrada or datetime.now()
-    if hora.time() < datetime.strptime("06:00", "%H:%M").time() or hora.time() > datetime.strptime("22:00", "%H:%M").time():
-        return {"estado": "Denegado", "mensaje": "Fuera del horario permitido"}
-    registros.append(entrada)
-    return {"estado": "Permitido", "mensaje": "Entrada registrada"}
